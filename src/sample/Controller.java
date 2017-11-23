@@ -12,15 +12,15 @@ import java.math.RoundingMode;
 public class Controller
 {
     @FXML
-    private Slider fqcSlider, durSlider;
+    private Slider fqcSlider, durSlider, offsetSlider;
     @FXML
-    private Label fqcLabel, fqcLabel2, durLabel, durLabel2;
+    private Label fqcLabel, fqcLabel2, durLabel, durLabel2, offsetLabel, offsetLabel2;
     @FXML
-    private TextField fqcField, durField;
+    private TextField fqcField, durField, offsetField;
 
     private DoubleProperty frequency = new SimpleDoubleProperty();
     private DoubleProperty duration = new SimpleDoubleProperty();
-
+    private DoubleProperty offset = new SimpleDoubleProperty();
 
     @FXML
     public void initialize()
@@ -95,6 +95,39 @@ public class Controller
                 {
                     durLabel2.setText("Zadejte číslo.");
                     durLabel2.setVisible(true);
+                }
+            }
+        });
+
+        offsetSlider.valueProperty().bindBidirectional(offset);
+        offsetSlider.valueProperty().addListener(((observable, oldValue, newValue) ->
+        {
+            offsetLabel.setText("Offset: " + new BigDecimal(newValue.doubleValue()).setScale(2, RoundingMode.HALF_UP).doubleValue() + " Hz");
+            offsetField.setPromptText(new BigDecimal(newValue.doubleValue()).setScale(2, RoundingMode.HALF_UP).toString());
+        }));
+
+        offsetField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            try
+            {
+                offset.setValue(Double.parseDouble(newValue));
+                offsetLabel2.setVisible(false);
+            }
+            catch (NumberFormatException e2)
+            {
+                if (e2.getLocalizedMessage().indexOf(',') >= 0)
+                {
+                    offsetLabel2.setText("Jako desetinné znaménko použijte tečku.");
+                    offsetLabel2.setVisible(true);
+                }
+                else if(e2.getLocalizedMessage().contains("empty"))
+                {
+                    offsetLabel2.setVisible(false);
+                }
+                else
+                {
+                    offsetLabel2.setText("Zadejte číslo.");
+                    offsetLabel2.setVisible(true);
                 }
             }
         });

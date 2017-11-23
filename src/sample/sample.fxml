@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.scene.control.*?>
@@ -62,7 +63,7 @@
                               <Insets left="15.0" right="15.0" top="15.0" />
                            </padding>
                         </Slider>
-                        <HBox prefHeight="100.0" prefWidth="200.0">
+                        <HBox>
                            <children>
                               <TextField fx:id="durField">
                                  <HBox.margin>
@@ -71,7 +72,37 @@
                               </TextField>
                               <Label fx:id="durLabel2" text="Zadejte číslo." visible="false">
                                  <font>
-                                    <Font size="20.0" />
+                                    <Font name="System Italic" size="20.0" />
+                                 </font>
+                                 <HBox.margin>
+                                    <Insets left="15.0" top="10.0" />
+                                 </HBox.margin>
+                              </Label>
+                           </children>
+                        </HBox>
+                        <Label fx:id="offsetLabel" text="Offset: Hz">
+                           <font>
+                              <Font size="24.0" />
+                           </font>
+                           <VBox.margin>
+                              <Insets left="15.0" top="30.0" />
+                           </VBox.margin>
+                        </Label>
+                        <Slider fx:id="offsetSlider" blockIncrement="1.0" majorTickUnit="1.0" max="10.0" minorTickCount="10" showTickMarks="true">
+                           <VBox.margin>
+                              <Insets left="15.0" right="15.0" top="15.0" />
+                           </VBox.margin>
+                        </Slider>
+                        <HBox>
+                           <children>
+                              <TextField fx:id="offsetField">
+                                 <HBox.margin>
+                                    <Insets left="15.0" top="15.0" />
+                                 </HBox.margin>
+                              </TextField>
+                              <Label fx:id="offsetLabel2" text="Zadejte číslo." visible="false">
+                                 <font>
+                                    <Font name="System Italic" size="20.0" />
                                  </font>
                                  <HBox.margin>
                                     <Insets left="15.0" top="10.0" />
