@@ -110,14 +110,29 @@
                               </Label>
                            </children>
                         </HBox>
-                        <Button fx:id="playButton" alignment="CENTER" contentDisplay="CENTER" minHeight="50.0" minWidth="100.0" mnemonicParsing="false" text="Play!">
-                           <VBox.margin>
-                              <Insets left="340.0" top="30.0" />
-                           </VBox.margin>
-                           <font>
-                              <Font size="24.0" />
-                           </font>
-                        </Button>
+                        <HBox>
+                           <children>
+                              <Label fx:id="scoreLabel" text="Skóre:">
+                                 <font>
+                                    <Font size="24.0" />
+                                 </font>
+                                 <HBox.margin>
+                                    <Insets left="15.0" top="30.0" />
+                                 </HBox.margin>
+                              </Label>
+                              <Button fx:id="playButton" alignment="CENTER" contentDisplay="CENTER" minHeight="50.0" minWidth="100.0" mnemonicParsing="false" text="Play!">
+                                 <VBox.margin>
+                                    <Insets left="340.0" top="30.0" />
+                                 </VBox.margin>
+                                 <font>
+                                    <Font size="24.0" />
+                                 </font>
+                                 <HBox.margin>
+                                    <Insets left="260.0" top="30.0" />
+                                 </HBox.margin>
+                              </Button>
+                           </children>
+                        </HBox>
                      </children>
                   </VBox>
                </center>

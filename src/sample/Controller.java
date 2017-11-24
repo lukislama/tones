@@ -19,7 +19,7 @@ public class Controller
     @FXML
     private Slider fqcSlider, durSlider, offsetSlider;
     @FXML
-    private Label fqcLabel, fqcLabel2, durLabel, durLabel2, offsetLabel, offsetLabel2;
+    private Label fqcLabel, fqcLabel2, durLabel, durLabel2, offsetLabel, offsetLabel2, scoreLabel;
     @FXML
     private TextField fqcField, durField, offsetField;
     @FXML
@@ -28,6 +28,10 @@ public class Controller
     private DoubleProperty frequency = new SimpleDoubleProperty();
     private DoubleProperty duration = new SimpleDoubleProperty();
     private DoubleProperty offset = new SimpleDoubleProperty();
+
+    private IntegerProperty correct = new SimpleIntegerProperty(0);
+
+    private IntegerProperty total = new SimpleIntegerProperty(0);
 
     private AtomicBoolean tonePlaying = new AtomicBoolean(false);
 
@@ -39,22 +43,32 @@ public class Controller
 
     public void playTones() throws LineUnavailableException
     {
+
         Random r1 = new Random();
 
         boolean order = r1.nextDouble() > 0.5;
+        int higher;
         float frequency = this.frequency.floatValue();
         float duration = this.duration.floatValue()*1000;
 
         Tone t1 = new Tone(frequency, duration);
 
         if(r1.nextDouble() > 0.5)
+        {
             frequency += offset.floatValue();
+            higher = 2;
+        }
+
         else
+        {
             frequency -= offset.floatValue();
+            higher = 1;
+        }
+
 
         Tone t2 = new Tone(frequency, duration);
 
-        if(r1.nextDouble() > 0.5)
+        if(order)
         {
             t1.play();
             t2.play();
@@ -64,6 +78,25 @@ public class Controller
             t2.play();
             t1.play();
         }
+
+        if(order && higher == 1)
+            checkScore(1);
+        else if(order && higher == 2)
+            checkScore(2);
+        else if(!order && higher == 1)
+            checkScore(2);
+        else if(!order && higher == 2)
+            checkScore(1);
+    }
+
+    public void checkScore(int order)
+    {
+        Platform.runLater(() ->
+        {
+            ConfirmationDialog c1 = new ConfirmationDialog();
+            if(c1.show() == order)
+                correct.setValue(correct.getValue() + 1);
+        });
     }
 
     public void startToneThread()
@@ -71,26 +104,13 @@ public class Controller
 
         Thread t1 = new Thread(() ->
         {
-            if(fqcSlider.getValue() > 0
-                    && durSlider.getValue() > 0)
+            try
             {
-                try
-                {
-                    playTones();
-                }
-                catch (LineUnavailableException e)
-                {
-                    e.printStackTrace();
-                }
+                playTones();
             }
-            else
+            catch (LineUnavailableException e)
             {
-                Platform.runLater(() ->
-                {
-                    WarningDialog w1 = new WarningDialog("Frequency or duration value missing"
-                            , "You need ot supply a valid frequency and duration value.");
-                    w1.show();
-                });
+                e.printStackTrace();
             }
 
             tonePlaying.set(false);
@@ -216,16 +236,43 @@ public class Controller
         {
             if(tonePlaying.compareAndSet(false, true))
             {
-                playButton.setDisable(true);
-                playButton.setText("Playing...");
-                playButton.setStyle("-fx-font: 20 italic; -fx-font-style: italic");
-                startToneThread();
+                if(fqcSlider.getValue() > 0
+                        && durSlider.getValue() > 0)
+                {
+                    playButton.setDisable(true);
+                    playButton.setText("Playing...");
+                    playButton.setStyle("-fx-font: 20 italic; -fx-font-style: italic");
+
+                    total.setValue(total.getValue() + 1);
+                    startToneThread();
+                }
+                else
+                {
+                    tonePlaying.compareAndSet(true, false);
+                    Platform.runLater(() ->
+                    {
+                        WarningDialog w1 = new WarningDialog("Frekvence nebo doba trvání chybí."
+                                , "Musíte zadat platnou hodnotu pro frekvenci a dobu trvání.");
+                        w1.show();
+                    });
+                }
+
             }
             else
             {
                 WarningDialog w1 = new WarningDialog("Tón už hraje.", "Tón už hraje. Vždy může hrát maximálně jeden tón.");
                 w1.show();
             }
+        });
+
+        total.addListener((observable, oldValue, newValue) ->
+        {
+            scoreLabel.setText("Skóre: " + correct.getValue() + "/" + newValue);
+        });
+
+        correct.addListener((observable, oldValue, newValue) ->
+        {
+            scoreLabel.setText("Skóre: " + newValue + "/" + total.getValue());
         });
     }
 }

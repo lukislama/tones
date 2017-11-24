@@ -1,6 +1,8 @@
 package sample;
 
 import javafx.scene.control.Alert;
+import javafx.scene.image.Image;
+import javafx.stage.Stage;
 
 public class WarningDialog
 {
@@ -17,6 +19,8 @@ public class WarningDialog
         alert.setTitle("Chyba");
         alert.setHeaderText(headerText);
         alert.setContentText(contentText);
+        Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+        stage.getIcons().add(new Image(this.getClass().getResource("warning-sign.png").toString()));
         alert.showAndWait();
     }
 }
