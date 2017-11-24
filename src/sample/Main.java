@@ -7,6 +7,11 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
+/**
+ * Author of main icon: https://www.flaticon.com/authors/gregor-cresnar
+ * Author of confirmation dialog icon: https://www.flaticon.com/authors/roundicons-freebies
+ */
+
 public class Main extends Application {
 
     @Override
