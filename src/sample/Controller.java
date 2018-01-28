@@ -8,9 +8,15 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 
-import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.*;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -23,7 +29,7 @@ public class Controller
     @FXML
     private TextField fqcField, durField, offsetField;
     @FXML
-    private Button playButton;
+    private Button playButton, listenButton;
 
     private DoubleProperty frequency = new SimpleDoubleProperty();
     private DoubleProperty duration = new SimpleDoubleProperty();
@@ -79,14 +85,26 @@ public class Controller
             t1.play();
         }
 
-        if(order && higher == 1)
-            checkScore(1);
-        else if(order && higher == 2)
-            checkScore(2);
-        else if(!order && higher == 1)
-            checkScore(2);
-        else if(!order && higher == 2)
-            checkScore(1);
+
+        if(t1.hz != t2.hz)
+        {
+            if(order && higher == 1)
+                checkScore(1);
+            else if(order && higher == 2)
+                checkScore(2);
+            else if(!order && higher == 1)
+                checkScore(2);
+            else if(!order && higher == 2)
+                checkScore(1);
+        }
+        else
+        {
+            Platform.runLater(() ->
+            {
+                total.setValue(total.getValue() - 1);
+            });
+        }
+
     }
 
     public void checkScore(int order)
@@ -274,5 +292,121 @@ public class Controller
         {
             scoreLabel.setText("Skóre: " + newValue + "/" + total.getValue());
         });
+
+        //Second Pane starts here
+
+        listenButton.setOnAction(e ->
+        {
+            startListenThread();
+        });
+
     }
+
+    public void startListenThread()
+    {
+        Thread t2 = new Thread(() ->
+        {
+            getTone();
+        });
+
+        t2.setDaemon(true);
+        t2.start();
+    }
+
+    public void getTone()
+    {
+
+        final int DEF_BUFFER_SAMPLE_SZ = 8100;
+
+        /*
+        AudioFileFormat.Type fileType = AudioFileFormat.Type.WAVE;
+        TargetDataLine line;
+        AudioFormat format = new AudioFormat(48000,24,2,true, true);
+        DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+
+        if(!AudioSystem.isLineSupported(info))
+        {
+            WarningDialog w = new WarningDialog("Line not supported."
+            , "Váš počítač nesplňuje požadavky pro tuto funkcionalitu.");
+        }
+        else
+        {
+            try
+            {
+                line = (TargetDataLine) AudioSystem.getLine(info);
+                line.open(format);
+                line.start();
+
+                System.out.println("Started capturing");
+            }
+            catch (LineUnavailableException e)
+            {
+                e.printStackTrace();
+            }
+
+        }
+        */
+
+        File audioFile = new File(this.getClass().getResource("1000.wav").getPath());
+        AudioInputStream in = null;
+
+        try
+        {
+            final AudioFormat audioFormat = (AudioSystem.getAudioFileFormat(audioFile).getFormat());
+
+            in = AudioSystem.getAudioInputStream(audioFile);
+
+            final int normalBytes = Fft.normalBytesFromBits(audioFormat.getSampleSizeInBits());
+
+            float[] samples = new float[DEF_BUFFER_SAMPLE_SZ * audioFormat.getChannels()];
+            long[] transfer = new long[samples.length];
+            byte[] bytes = new byte[samples.length * normalBytes];
+            double[] MagXSorted = new double[DEF_BUFFER_SAMPLE_SZ];
+            ArrayList<Double> peaks = new ArrayList<>();
+            ArrayList<Integer> peakIndex = new ArrayList<>();
+
+            int bread;
+           /* while(true)
+            {
+                if((bread = in.read(bytes)) == -1)
+                    break;
+
+*/              bread = in.read(bytes);
+
+                Object[] fft = Fft.fft(bytes, transfer, samples, bread, audioFormat);
+
+                double[] real = (double[]) fft[0];
+                double[] imag = (double[]) fft[1];
+                
+                Object[] polarCoord = Fft.convertToPolar(real, imag);
+
+                double[] MagX = (double[]) polarCoord[0];
+                double[] PhaseX = (double[]) polarCoord[1];
+
+                double peak = -1.0;
+                int index = -1;
+
+                for(int i = 0; i < MagX.length; i++)
+                {
+                    if(MagX[i] > peak)
+                    {
+                        peak = MagX[i];
+                        index = i;
+                    }
+                }
+
+                System.out.println(index);
+
+            // }
+
+            in.close();
+
+        }
+        catch (UnsupportedAudioFileException | IOException e)
+        {
+            e.printStackTrace();
+        }
+
+    }
+
 }

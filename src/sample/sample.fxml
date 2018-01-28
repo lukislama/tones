@@ -140,9 +140,17 @@
          </content>
     </Tab>
     <Tab text="Test zpěvu">
-      <content>
-        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-      </content>
+         <content>
+            <BorderPane prefHeight="200.0" prefWidth="200.0">
+               <center>
+                  <Button fx:id="listenButton" mnemonicParsing="false" text="Listen" BorderPane.alignment="CENTER">
+                     <font>
+                        <Font size="24.0" />
+                     </font>
+                  </Button>
+               </center>
+            </BorderPane>
+         </content>
     </Tab>
   </tabs>
 </TabPane>
