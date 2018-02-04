@@ -3,14 +3,21 @@ package sample;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.fxml.FXML;
+import javafx.scene.chart.ScatterChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 
-import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.*;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -19,11 +26,13 @@ public class Controller
     @FXML
     private Slider fqcSlider, durSlider, offsetSlider;
     @FXML
-    private Label fqcLabel, fqcLabel2, durLabel, durLabel2, offsetLabel, offsetLabel2, scoreLabel;
+    private Label fqcLabel, fqcLabel2, durLabel, durLabel2, offsetLabel, offsetLabel2, scoreLabel, peakLabel;
     @FXML
     private TextField fqcField, durField, offsetField;
     @FXML
-    private Button playButton;
+    private Button playButton, listenButton, stopButton;
+    @FXML
+    private ScatterChart resultsChart;
 
     private DoubleProperty frequency = new SimpleDoubleProperty();
     private DoubleProperty duration = new SimpleDoubleProperty();
@@ -34,6 +43,9 @@ public class Controller
     private IntegerProperty total = new SimpleIntegerProperty(0);
 
     private AtomicBoolean tonePlaying = new AtomicBoolean(false);
+    private AtomicBoolean isListening = new AtomicBoolean(false);
+
+    private BooleanProperty stopButtonDisabled = new SimpleBooleanProperty(true);
 
     @FXML
     public void initialize()
@@ -79,14 +91,26 @@ public class Controller
             t1.play();
         }
 
-        if(order && higher == 1)
-            checkScore(1);
-        else if(order && higher == 2)
-            checkScore(2);
-        else if(!order && higher == 1)
-            checkScore(2);
-        else if(!order && higher == 2)
-            checkScore(1);
+
+        if(t1.hz != t2.hz)
+        {
+            if(order && higher == 1)
+                checkScore(1);
+            else if(order && higher == 2)
+                checkScore(2);
+            else if(!order && higher == 1)
+                checkScore(2);
+            else if(!order && higher == 2)
+                checkScore(1);
+        }
+        else
+        {
+            Platform.runLater(() ->
+            {
+                total.setValue(total.getValue() - 1);
+            });
+        }
+
     }
 
     public void checkScore(int order)
@@ -274,5 +298,104 @@ public class Controller
         {
             scoreLabel.setText("Skóre: " + newValue + "/" + total.getValue());
         });
+
+        //Second Pane starts here
+
+        listenButton.setOnAction(e ->
+        {
+            if(isListening.compareAndSet(false, true))
+            {
+                startListenThread();
+                listenButton.setDisable(true);
+                listenButton.setText("Listening...");
+                listenButton.setStyle("-fx-font: 20 italic; -fx-font-style: italic");
+
+                stopButtonDisabled.setValue(false);
+            }
+        });
+
+        stopButton.disableProperty().bindBidirectional(stopButtonDisabled);
+
+        stopButton.setOnAction(event -> stopButtonDisabled.setValue(true));
+
+    }
+
+    public void startListenThread()
+    {
+        Thread t2 = new Thread(() -> getTone());
+
+        t2.setDaemon(true);
+        t2.start();
+    }
+
+    public void getTone()
+    {
+
+        final int DEF_BUFFER_SAMPLE_SZ = 48000;
+
+        AudioFormat format = new AudioFormat(48000,16,2,true, true);
+        DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+
+        if(!AudioSystem.isLineSupported(info))
+        {
+            WarningDialog w = new WarningDialog("Line not supported."
+            , "Zkontrolujte si prosím nastavení Vašeho mikrofonu." +
+                    "\nPoužijte: \n\t48000Hz\n\t16bits\n\t2 channels");
+            Platform.runLater(() -> w.show());
+        }
+        else
+        {
+            findHz finding = new findHz(DEF_BUFFER_SAMPLE_SZ, format, info);
+
+            int result = 0;
+
+            do
+            {
+                try
+                {
+                    finding.capture();
+                }
+                catch (LineUnavailableException e)
+                {
+                    e.printStackTrace();
+                }
+
+                result = finding.calculateFFT(resultsChart);
+
+                final int finalResult = result;
+                Platform.runLater(() ->
+                {
+                    peakLabel.setStyle("-fx-text-fill: rgba(255,0,0,0.45); -fx-font-style: italic; -fx-font-size: 24");
+                    peakLabel.setText(finalResult + " Hz");
+                });
+
+            }
+            while((result > 15000 || result < 60) && !stopButtonDisabled.getValue());
+
+            final int finalResult = result;
+
+            if(!stopButtonDisabled.getValue())
+            {
+                Platform.runLater(() ->
+                {
+                    peakLabel.setStyle("-fx-text-fill: #52ff00; -fx-font-style: normal; -fx-font-size: 24");
+                    peakLabel.setText(finalResult + " Hz");
+
+                });
+            }
+        }
+
+        Platform.runLater(() ->
+        {
+            listenButton.setText("Listen!");
+            listenButton.setStyle("-fx-font: 24 italic; -fx-font-style: normal; -fx-font-size: 24");
+            listenButton.setDisable(false);
+
+
+        });
+
+        stopButtonDisabled.setValue(true);
+
+        isListening.compareAndSet(true, false);
     }
 }
