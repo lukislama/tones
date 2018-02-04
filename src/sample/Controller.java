@@ -3,6 +3,7 @@ package sample;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.fxml.FXML;
+import javafx.scene.chart.ScatterChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
@@ -25,11 +26,13 @@ public class Controller
     @FXML
     private Slider fqcSlider, durSlider, offsetSlider;
     @FXML
-    private Label fqcLabel, fqcLabel2, durLabel, durLabel2, offsetLabel, offsetLabel2, scoreLabel;
+    private Label fqcLabel, fqcLabel2, durLabel, durLabel2, offsetLabel, offsetLabel2, scoreLabel, peakLabel;
     @FXML
     private TextField fqcField, durField, offsetField;
     @FXML
-    private Button playButton, listenButton;
+    private Button playButton, listenButton, stopButton;
+    @FXML
+    private ScatterChart resultsChart;
 
     private DoubleProperty frequency = new SimpleDoubleProperty();
     private DoubleProperty duration = new SimpleDoubleProperty();
@@ -40,6 +43,9 @@ public class Controller
     private IntegerProperty total = new SimpleIntegerProperty(0);
 
     private AtomicBoolean tonePlaying = new AtomicBoolean(false);
+    private AtomicBoolean isListening = new AtomicBoolean(false);
+
+    private BooleanProperty stopButtonDisabled = new SimpleBooleanProperty(true);
 
     @FXML
     public void initialize()
@@ -297,17 +303,26 @@ public class Controller
 
         listenButton.setOnAction(e ->
         {
-            startListenThread();
+            if(isListening.compareAndSet(false, true))
+            {
+                startListenThread();
+                listenButton.setDisable(true);
+                listenButton.setText("Listening...");
+                listenButton.setStyle("-fx-font: 20 italic; -fx-font-style: italic");
+
+                stopButtonDisabled.setValue(false);
+            }
         });
+
+        stopButton.disableProperty().bindBidirectional(stopButtonDisabled);
+
+        stopButton.setOnAction(event -> stopButtonDisabled.setValue(true));
 
     }
 
     public void startListenThread()
     {
-        Thread t2 = new Thread(() ->
-        {
-            getTone();
-        });
+        Thread t2 = new Thread(() -> getTone());
 
         t2.setDaemon(true);
         t2.start();
@@ -331,17 +346,56 @@ public class Controller
         else
         {
             findHz finding = new findHz(DEF_BUFFER_SAMPLE_SZ, format, info);
-            try
+
+            int result = 0;
+
+            do
             {
-                finding.capture();
+                try
+                {
+                    finding.capture();
+                }
+                catch (LineUnavailableException e)
+                {
+                    e.printStackTrace();
+                }
+
+                result = finding.calculateFFT(resultsChart);
+
+                final int finalResult = result;
+                Platform.runLater(() ->
+                {
+                    peakLabel.setStyle("-fx-text-fill: rgba(255,0,0,0.45); -fx-font-style: italic; -fx-font-size: 24");
+                    peakLabel.setText(finalResult + " Hz");
+                });
+
             }
-            catch (LineUnavailableException e)
+            while((result > 15000 || result < 60) && !stopButtonDisabled.getValue());
+
+            final int finalResult = result;
+
+            if(!stopButtonDisabled.getValue())
             {
-                e.printStackTrace();
+                Platform.runLater(() ->
+                {
+                    peakLabel.setStyle("-fx-text-fill: #52ff00; -fx-font-style: normal; -fx-font-size: 24");
+                    peakLabel.setText(finalResult + " Hz");
+
+                });
             }
-            finding.calculateFFT();
         }
 
-    }
+        Platform.runLater(() ->
+        {
+            listenButton.setText("Listen!");
+            listenButton.setStyle("-fx-font: 24 italic; -fx-font-style: normal; -fx-font-size: 24");
+            listenButton.setDisable(false);
 
+
+        });
+
+        stopButtonDisabled.setValue(true);
+
+        isListening.compareAndSet(true, false);
+    }
 }

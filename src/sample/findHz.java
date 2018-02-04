@@ -1,8 +1,15 @@
 package sample;
 
+import javafx.application.Platform;
+import javafx.scene.chart.ScatterChart;
+import javafx.scene.chart.XYChart;
+
 import javax.sound.sampled.*;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 public class findHz
 {
@@ -54,7 +61,7 @@ public class findHz
         System.out.println("Line closed.");
     }
 
-    public void calculateFFT()
+    public int calculateFFT(ScatterChart resultChart)
     {
         Instant start = Instant.now();
 
@@ -68,42 +75,32 @@ public class findHz
         double[] MagX = (double[]) polarCoord[0];
         double[] PhaseX = (double[]) polarCoord[1];
 
-        int[] peaksIndex = findPeaks(MagX);
+        int peak = findPeak(MagX);
 
         Instant end = Instant.now();
 
         Duration timeElapsed = Duration.between(start, end);
 
-        System.out.println("Here are the 5 peaks: \n");
-
-        for(int i : peaksIndex)
-            System.out.println(i);
-
         System.out.println("This opertaion took " + timeElapsed.toMillis() + "ms with sample size of " + DEF_BUFFER_SAMPLE_SZ);
+
+        return peak;
     }
 
-    public int[] findPeaks(double[] MagX)
+    public int findPeak(double[] MagX)
     {
 
-        int[] peaks = new int[5];
+        double peak = -1.0;
+        int index = -1;
 
-        for(int i = 0; i < 5; i++)
+        for(int j = 0; j < MagX.length; j++)
         {
-            double peak = -1.0;
-            int index = -1;
-
-            for(int j = 0; j < MagX.length; j++)
+            if(MagX[j] > peak)
             {
-                if(MagX[j] > peak)
-                {
-                    peak = MagX[j];
-                    index = j;
-                }
+                peak = MagX[j];
+                index = j;
             }
-
-            peaks[i] = index;
         }
 
-        return peaks;
+        return index;
     }
 }

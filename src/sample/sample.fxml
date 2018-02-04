@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.chart.*?>
 <?import java.lang.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.text.*?>
@@ -143,14 +144,55 @@
          <content>
             <BorderPane prefHeight="200.0" prefWidth="200.0">
                <center>
-                  <Button fx:id="listenButton" mnemonicParsing="false" text="Listen" BorderPane.alignment="CENTER">
+                  <VBox>
+                     <children>
+                        <Button fx:id="listenButton" mnemonicParsing="false" text="Listen" BorderPane.alignment="CENTER">
+                           <font>
+                              <Font size="24.0" />
+                           </font>
+                           <VBox.margin>
+                              <Insets left="353.0" top="150.0" />
+                           </VBox.margin>
+                        </Button>
+                        <Button fx:id="stopButton" mnemonicParsing="false" text="Stop">
+                           <font>
+                              <Font size="24.0" />
+                           </font>
+                           <VBox.margin>
+                              <Insets left="359.0" top="25.0" />
+                           </VBox.margin>
+                        </Button>
+                     </children>
+                  </VBox>
+               </center>
+               <bottom>
+                  <Label fx:id="peakLabel" text="Hz" textAlignment="CENTER" BorderPane.alignment="CENTER">
                      <font>
                         <Font size="24.0" />
                      </font>
-                  </Button>
-               </center>
+                     <BorderPane.margin>
+                        <Insets bottom="150.0" />
+                     </BorderPane.margin>
+                  </Label>
+               </bottom>
             </BorderPane>
          </content>
     </Tab>
+      <Tab text="Chart">
+        <content>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+               <children>
+                  <ScatterChart fx:id="resultsChart" layoutX="-1.0" layoutY="-2.0" prefHeight="573.0" prefWidth="800.0">
+                    <xAxis>
+                      <CategoryAxis side="BOTTOM" />
+                    </xAxis>
+                    <yAxis>
+                      <NumberAxis side="LEFT" />
+                    </yAxis>
+                  </ScatterChart>
+               </children>
+            </AnchorPane>
+        </content>
+      </Tab>
   </tabs>
 </TabPane>
