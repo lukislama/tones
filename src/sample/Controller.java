@@ -316,95 +316,30 @@ public class Controller
     public void getTone()
     {
 
-        final int DEF_BUFFER_SAMPLE_SZ = 8100;
+        final int DEF_BUFFER_SAMPLE_SZ = 48000;
 
-        /*
-        AudioFileFormat.Type fileType = AudioFileFormat.Type.WAVE;
-        TargetDataLine line;
-        AudioFormat format = new AudioFormat(48000,24,2,true, true);
+        AudioFormat format = new AudioFormat(48000,16,2,true, true);
         DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
 
         if(!AudioSystem.isLineSupported(info))
         {
             WarningDialog w = new WarningDialog("Line not supported."
-            , "Váš počítač nesplňuje požadavky pro tuto funkcionalitu.");
+            , "Zkontrolujte si prosím nastavení Vašeho mikrofonu." +
+                    "\nPoužijte: \n\t48000Hz\n\t16bits\n\t2 channels");
+            Platform.runLater(() -> w.show());
         }
         else
         {
+            findHz finding = new findHz(DEF_BUFFER_SAMPLE_SZ, format, info);
             try
             {
-                line = (TargetDataLine) AudioSystem.getLine(info);
-                line.open(format);
-                line.start();
-
-                System.out.println("Started capturing");
+                finding.capture();
             }
             catch (LineUnavailableException e)
             {
                 e.printStackTrace();
             }
-
-        }
-        */
-
-        File audioFile = new File(this.getClass().getResource("1000.wav").getPath());
-        AudioInputStream in = null;
-
-        try
-        {
-            final AudioFormat audioFormat = (AudioSystem.getAudioFileFormat(audioFile).getFormat());
-
-            in = AudioSystem.getAudioInputStream(audioFile);
-
-            final int normalBytes = Fft.normalBytesFromBits(audioFormat.getSampleSizeInBits());
-
-            float[] samples = new float[DEF_BUFFER_SAMPLE_SZ * audioFormat.getChannels()];
-            long[] transfer = new long[samples.length];
-            byte[] bytes = new byte[samples.length * normalBytes];
-            double[] MagXSorted = new double[DEF_BUFFER_SAMPLE_SZ];
-            ArrayList<Double> peaks = new ArrayList<>();
-            ArrayList<Integer> peakIndex = new ArrayList<>();
-
-            int bread;
-           /* while(true)
-            {
-                if((bread = in.read(bytes)) == -1)
-                    break;
-
-*/              bread = in.read(bytes);
-
-                Object[] fft = Fft.fft(bytes, transfer, samples, bread, audioFormat);
-
-                double[] real = (double[]) fft[0];
-                double[] imag = (double[]) fft[1];
-                
-                Object[] polarCoord = Fft.convertToPolar(real, imag);
-
-                double[] MagX = (double[]) polarCoord[0];
-                double[] PhaseX = (double[]) polarCoord[1];
-
-                double peak = -1.0;
-                int index = -1;
-
-                for(int i = 0; i < MagX.length; i++)
-                {
-                    if(MagX[i] > peak)
-                    {
-                        peak = MagX[i];
-                        index = i;
-                    }
-                }
-
-                System.out.println(index);
-
-            // }
-
-            in.close();
-
-        }
-        catch (UnsupportedAudioFileException | IOException e)
-        {
-            e.printStackTrace();
+            finding.calculateFFT();
         }
 
     }

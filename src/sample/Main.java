@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 /**
  * Author of main icon: https://www.flaticon.com/authors/gregor-cresnar
  * Author of confirmation dialog icon: https://www.flaticon.com/authors/roundicons-freebies
+ * Author of error dialog icon: http://www.flaticon.com/authors/madebyoliver
  */
 
 public class Main extends Application {
