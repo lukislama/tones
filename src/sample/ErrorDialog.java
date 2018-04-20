@@ -1,8 +1,8 @@
 package sample;
 
-import javafx.scene.control.Alert;
-import javafx.scene.image.Image;
-import javafx.stage.Stage;
+        import javafx.scene.control.Alert;
+        import javafx.scene.image.Image;
+        import javafx.stage.Stage;
 
 public class ErrorDialog
 {

@@ -1,40 +1,54 @@
 package sample;
 
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.impl.CoordinateArraySequence;
+import com.vividsolutions.jts.simplify.DouglasPeuckerSimplifier;
 import javafx.application.Platform;
 import javafx.beans.property.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.chart.ScatterChart;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.sound.sampled.*;
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+
 
 public class Controller
 {
     @FXML
     private Slider fqcSlider, durSlider, offsetSlider;
     @FXML
-    private Label fqcLabel, fqcLabel2, durLabel, durLabel2, offsetLabel, offsetLabel2, scoreLabel, peakLabel;
+    private Label fqcLabel, fqcLabel2, durLabel, durLabel2, offsetLabel, offsetLabel2, scoreLabel, peakLabel, exactFrequencyLabel;
     @FXML
-    private TextField fqcField, durField, offsetField;
+    private TextField fqcField, durField, offsetField, exactFrequencyField;
     @FXML
-    private Button playButton, listenButton, stopButton;
+    private Button playButton, randomButton, exactButton;
     @FXML
-    private ScatterChart resultsChart;
+    private LineChart resultsChart;
+    @FXML
+    private NumberAxis xAxis, yAxis;
 
     private DoubleProperty frequency = new SimpleDoubleProperty();
+    private DoubleProperty exactFrequency = new SimpleDoubleProperty();
     private DoubleProperty duration = new SimpleDoubleProperty();
     private DoubleProperty offset = new SimpleDoubleProperty();
 
@@ -45,7 +59,7 @@ public class Controller
     private AtomicBoolean tonePlaying = new AtomicBoolean(false);
     private AtomicBoolean isListening = new AtomicBoolean(false);
 
-    private BooleanProperty stopButtonDisabled = new SimpleBooleanProperty(true);
+    private boolean isExact = false;
 
     @FXML
     public void initialize()
@@ -256,6 +270,32 @@ public class Controller
             }
         });
 
+        exactFrequencyField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            try
+            {
+                exactFrequency.setValue(Double.parseDouble(newValue));
+                exactFrequencyLabel.setVisible(false);
+            }
+            catch (NumberFormatException e3)
+            {
+                if(e3.getLocalizedMessage().indexOf(',') >= 0)
+                {
+                    exactFrequencyLabel.setText("Jako desetinné znaménko použijte tečku.");
+                    exactFrequencyLabel.setVisible(true);
+                }
+                else if(e3.getLocalizedMessage().contains("empty"))
+                {
+                    exactFrequencyLabel.setVisible(false);
+                }
+                else
+                {
+                    exactFrequencyLabel.setText("Zadejte číslo.");
+                    exactFrequencyLabel.setVisible(true);
+                }
+            }
+        });
+
         playButton.setOnAction(e ->
         {
             if(tonePlaying.compareAndSet(false, true))
@@ -301,34 +341,91 @@ public class Controller
 
         //Second Pane starts here
 
-        listenButton.setOnAction(e ->
+        randomButton.setOnAction(e ->
+        {
+            resultsChart.getData().clear();
+
+            startListenThread();
+
+            randomButton.setDisable(true);
+            randomButton.setText("Listening...");
+            randomButton.setStyle("-fx-font: 20 italic; -fx-font-style: italic");
+
+            exactButton.setDisable(true);
+            exactButton.setText("Listening...");
+            exactButton.setStyle("-fx-font: 20 italic; -fx-font-style: italic");
+
+            exactFrequencyField.setDisable(true);
+        });
+
+        exactButton.setOnAction(e ->
         {
             if(isListening.compareAndSet(false, true))
             {
-                startListenThread();
-                listenButton.setDisable(true);
-                listenButton.setText("Listening...");
-                listenButton.setStyle("-fx-font: 20 italic; -fx-font-style: italic");
+                if(StringUtils.isNumeric(exactFrequencyField.getCharacters()))
+                {
+                    resultsChart.getData().clear();
 
-                stopButtonDisabled.setValue(false);
+                    isExact = true;
+
+                    startListenThread();
+
+                    randomButton.setDisable(true);
+                    randomButton.setText("Listening...");
+                    randomButton.setStyle("-fx-font: 20 italic; -fx-font-style: italic");
+
+                    exactButton.setDisable(true);
+                    exactButton.setText("Listening...");
+                    exactButton.setStyle("-fx-font: 20 italic; -fx-font-style: italic");
+
+                    exactFrequencyField.setDisable(true);
+                }
+                else
+                {
+                    WarningDialog w1 = new WarningDialog("Musíte zadat číslo.",
+                            "Zadejte prosím číslo.");
+                    w1.show();
+                }
             }
         });
-
-        stopButton.disableProperty().bindBidirectional(stopButtonDisabled);
-
-        stopButton.setOnAction(event -> stopButtonDisabled.setValue(true));
 
     }
 
     public void startListenThread()
     {
-        Thread t2 = new Thread(() -> getTone());
+        int frequency;
+
+        if(isExact)
+            frequency = exactFrequency.intValue();
+        else
+            frequency = ThreadLocalRandom.current().nextInt(100, 500);
+
+        int duration = 1500;
+
+        InformationDialog i1 = new InformationDialog("Zazní tón."
+                , "Nyní uslyšíte tón o náhodné frekvenci, snažte se ho napodobit hlasem, jak nejlépe umíte.");
+        i1.show();
+
+        Tone t1 = new Tone((float) frequency, (float) duration);
+        try
+        {
+            t1.play();
+
+        } catch (LineUnavailableException e)
+        {
+            ErrorDialog e1 = new ErrorDialog("Tón nelze přehrát"
+                    , "Zkontrolujte si prosím nastavení vašeho přehrávače a zkuste to znovu.");
+            e1.show();
+            return;
+        }
+
+        Thread t2 = new Thread(() -> getTone(frequency));
 
         t2.setDaemon(true);
         t2.start();
     }
 
-    public void getTone()
+    public void getTone(int frequency)
     {
 
         final int DEF_BUFFER_SAMPLE_SZ = 48000;
@@ -360,7 +457,7 @@ public class Controller
                     e.printStackTrace();
                 }
 
-                result = finding.calculateFFT(resultsChart);
+                result = finding.calculateFFT();
 
                 final int finalResult = result;
                 Platform.runLater(() ->
@@ -370,32 +467,102 @@ public class Controller
                 });
 
             }
-            while((result > 15000 || result < 60) && !stopButtonDisabled.getValue());
+            while((result > 15000 || result < 60));
 
             final int finalResult = result;
+            final int discrepancy = result - frequency;
 
-            if(!stopButtonDisabled.getValue())
+            Platform.runLater(() ->
             {
-                Platform.runLater(() ->
-                {
-                    peakLabel.setStyle("-fx-text-fill: #52ff00; -fx-font-style: normal; -fx-font-size: 24");
-                    peakLabel.setText(finalResult + " Hz");
 
-                });
-            }
+                if(Math.abs(discrepancy) < 5)
+                {
+                    peakLabel.setStyle("-fx-text-fill: #069200; -fx-font-style: normal; -fx-font-size: 24");
+                    peakLabel.setText("Dobrá práce!\nVáš tón: " + finalResult + " Hz"
+                            + "\nTón, který byl přehráván: " + frequency + " Hz");
+                }
+                else
+                {
+                    peakLabel.setStyle("-fx-text-fill: #92000a; -fx-font-family: normal; -fx-font-size: 24");
+                    peakLabel.setText("Váš tón: " + finalResult + " Hz"
+                    + "\nTón, který byl přehráván: " + frequency + " Hz"
+                    + "\nNevadí! Trénujte a příště se zadaří!");
+                }
+
+                buildRDPeucker(finding.MagX);
+
+            });
         }
 
         Platform.runLater(() ->
         {
-            listenButton.setText("Listen!");
-            listenButton.setStyle("-fx-font: 24 italic; -fx-font-style: normal; -fx-font-size: 24");
-            listenButton.setDisable(false);
+            randomButton.setText("Náhodně");
+            randomButton.setStyle("-fx-font: 24 italic; -fx-font-style: normal; -fx-font-size: 24");
+            randomButton.setDisable(false);
 
+            exactButton.setText("Přesně");
+            exactButton.setStyle("-fx-font: 24 italic; -fx-font-style: normal; -fx-font-size: 24");
+            exactButton.setDisable(false);
 
+            exactFrequencyField.setDisable(false);
         });
 
-        stopButtonDisabled.setValue(true);
+        isExact = false;
 
         isListening.compareAndSet(true, false);
     }
+
+    public void buildRDPeucker(double[] MagX)
+    {
+        resultsChart.setAnimated(true);
+
+        XYChart.Series<Number, Number> dataSeries = new XYChart.Series<>();
+
+        GeometryFactory gf = new GeometryFactory();
+
+        long t0 = System.nanoTime();
+        Coordinate[] coordinates = new Coordinate[MagX.length];
+        for(int i = 0; i < coordinates.length; i++)
+        {
+            coordinates[i] = new Coordinate(i, MagX[i]);
+        }
+
+        Geometry geom = new LineString(new CoordinateArraySequence(coordinates), gf);
+        Geometry simplified = DouglasPeuckerSimplifier.simplify(geom, 2);
+
+        List<XYChart.Data<Number, Number>> update = new ArrayList<>();
+        for(Coordinate each : simplified.getCoordinates())
+            update.add(new XYChart.Data<>(each.x, each.y));
+        long t1 = System.nanoTime();
+
+        System.out.println(String.format("Reduces points from %d to %d in %.1f ms", coordinates.length, update.size(),
+                (t1 - t0) / 1e6));
+
+        dataSeries.getData().addAll(update);
+        resultsChart.getData().addAll(dataSeries);
+    }
+
+    /*
+    This populates the chart with 96000 points. It is not reccomended to run this.
+
+    public void buildChart(double[] MagX)
+    {
+        XYChart.Series<Integer, Double> dataSeries = new XYChart.Series<>();
+        List<XYChart.Data<Integer, Double>> coordinates = new LinkedList<>();
+
+        for(int i = 0; i < MagX.length; i++)
+        {
+            XYChart.Data<Integer, Double> data = new XYChart.Data<>(i, MagX[i]);
+            coordinates.add(data);
+        }
+
+        dataSeries.getData().addAll(coordinates);
+
+        System.out.println("Done adding data");
+        System.out.println("Started populating chart.");
+        resultsChart.getData().addAll(dataSeries);
+        System.out.println("Chart is done.");
+
+
+    }*/
 }
