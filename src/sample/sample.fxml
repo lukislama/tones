@@ -146,22 +146,45 @@
                <center>
                   <VBox>
                      <children>
-                        <Button fx:id="listenButton" mnemonicParsing="false" text="Listen" BorderPane.alignment="CENTER">
-                           <font>
-                              <Font size="24.0" />
-                           </font>
+                        <HBox>
+                           <children>
+                              <Button fx:id="randomButton" mnemonicParsing="false" text="Náhodně" BorderPane.alignment="CENTER">
+                                 <font>
+                                    <Font size="24.0" />
+                                 </font>
+                                 <VBox.margin>
+                                    <Insets left="353.0" top="150.0" />
+                                 </VBox.margin>
+                              </Button>
+                              <Button fx:id="exactButton" mnemonicParsing="false" text="Přesně">
+                                 <font>
+                                    <Font size="24.0" />
+                                 </font>
+                                 <HBox.margin>
+                                    <Insets left="50.0" />
+                                 </HBox.margin>
+                              </Button>
+                           </children>
                            <VBox.margin>
-                              <Insets left="353.0" top="150.0" />
+                              <Insets />
                            </VBox.margin>
-                        </Button>
-                        <Button fx:id="stopButton" mnemonicParsing="false" text="Stop">
-                           <font>
-                              <Font size="24.0" />
-                           </font>
+                           <padding>
+                              <Insets left="250.0" top="100.0" />
+                           </padding>
+                        </HBox>
+                        <TextField fx:id="exactFrequencyField">
                            <VBox.margin>
-                              <Insets left="359.0" top="25.0" />
+                              <Insets left="250.0" right="265.0" top="25.0" />
                            </VBox.margin>
-                        </Button>
+                        </TextField>
+                        <Label fx:id="exactFrequencyLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="24.0" prefWidth="800.0" textAlignment="CENTER">
+                           <VBox.margin>
+                              <Insets top="25.0" />
+                           </VBox.margin>
+                           <font>
+                              <Font name="System Italic" size="20.0" />
+                           </font>
+                        </Label>
                      </children>
                   </VBox>
                </center>
@@ -178,20 +201,16 @@
             </BorderPane>
          </content>
     </Tab>
-      <Tab text="Chart">
+      <Tab text="Graf">
         <content>
-          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-               <children>
-                  <ScatterChart fx:id="resultsChart" layoutX="-1.0" layoutY="-2.0" prefHeight="573.0" prefWidth="800.0">
-                    <xAxis>
-                      <CategoryAxis side="BOTTOM" />
-                    </xAxis>
-                    <yAxis>
-                      <NumberAxis side="LEFT" />
-                    </yAxis>
-                  </ScatterChart>
-               </children>
-            </AnchorPane>
+            <LineChart fx:id="resultsChart" prefHeight="572.0" prefWidth="800.0">
+              <xAxis>
+                <NumberAxis side="BOTTOM" fx:id="xAxis" />
+              </xAxis>
+              <yAxis>
+                <NumberAxis fx:id="yAxis" side="LEFT" />
+              </yAxis>
+            </LineChart>
         </content>
       </Tab>
   </tabs>

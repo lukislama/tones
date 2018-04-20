@@ -1,15 +1,8 @@
 package sample;
 
-import javafx.application.Platform;
-import javafx.scene.chart.ScatterChart;
-import javafx.scene.chart.XYChart;
-
 import javax.sound.sampled.*;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
 
 public class findHz
 {
@@ -21,6 +14,7 @@ public class findHz
     float[] samples;
     long[] transfer;
     byte[] bytes;
+    double[] MagX;
 
     findHz(int DEF_BUFFER_SAMPLE_SZ, AudioFormat format, DataLine.Info info)
     {
@@ -61,7 +55,7 @@ public class findHz
         System.out.println("Line closed.");
     }
 
-    public int calculateFFT(ScatterChart resultChart)
+    public int calculateFFT()
     {
         Instant start = Instant.now();
 
@@ -74,6 +68,8 @@ public class findHz
 
         double[] MagX = (double[]) polarCoord[0];
         double[] PhaseX = (double[]) polarCoord[1];
+
+        this.MagX = MagX;
 
         int peak = findPeak(MagX);
 
